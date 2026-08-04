@@ -1,0 +1,63 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ap-automation-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ap_automation_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend/ap-automation
+    container_name: ap-automation-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/ap_automation_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-ZmY2YjZkNWQyZjFhOGU5YzdiNWEzZDFmNmU4YzliN2EyZDRmNmU4YzlhMWIzZDVm}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      SHOW_SQL: ${SHOW_SQL:-false}
+    ports:
+      - "8080:8080"
+    volumes:
+      # Uploaded invoice PDFs survive container restarts/rebuilds
+      - uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend/ap-automation-frontend
+      args:
+        # The browser calls this URL directly, so it must be an address
+        # reachable from your laptop's browser — the published backend
+        # port on localhost, not the internal Docker service name.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    container_name: ap-automation-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  pgdata:
+  uploads:

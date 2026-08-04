@@ -1,0 +1,23 @@
+body{
+    background:#f4f7fc;
+}
+
+.auth-container{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.auth-card{
+    width:420px;
+    border:none;
+    border-radius:15px;
+    box-shadow:0 8px 25px rgba(0,0,0,.15);
+}
+
+.logo{
+    font-size:28px;
+    font-weight:bold;
+    color:#0d6efd;
+}
